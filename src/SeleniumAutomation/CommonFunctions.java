@@ -3,6 +3,7 @@ package SeleniumAutomation;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+import io.github.bonigarcia.wdm.WebDriverManager;
 import net.iharder.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -22,7 +23,6 @@ import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
-import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -54,6 +54,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -66,6 +67,7 @@ public class CommonFunctions {
     public static WebDriver driver2;
 
     public static WebDriver driver;
+
     public static Connection conn;
     public final static HashMap<String, String> hmap = new HashMap<String, String>();
     public final static HashMap<String, Integer> TChmap = new HashMap<String, Integer>();
@@ -75,7 +77,7 @@ public class CommonFunctions {
     private static final String ALGORITHM = "AES";
     private static final byte[] keyValue
             = new byte[]{'T', 'h', 'i', 's', 'I', 's', 'A', 'S', 'e', 'c', 'r', 'e', 't', 'K', 'e', 'y'};
-    public static WebDriver WebDriver;
+
 
     private static int flag;
     public static java.util.Date odate;
@@ -159,7 +161,9 @@ public class CommonFunctions {
     public static void main(String[] args) throws Exception {
 
     }
-    public static boolean Invokekeyword(String funcname, String funcparameters) throws InterruptedException, AWTException, IOException, ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException, Exception, StaleElementReferenceException {
+    static WebDriver GlobalDriver;
+    static WebDriver driver4;
+    public static boolean Invokekeyword(WebDriver driver,String funcname, String funcparameters) throws InterruptedException, AWTException, IOException, ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException, Exception, StaleElementReferenceException {
         DriverScript.ActionTypes actTypes = DriverScript.ActionTypes.valueOf(funcname.toUpperCase());
         switch (actTypes)
         {
@@ -167,25 +171,25 @@ public class CommonFunctions {
 //                blnResult = LAUNCHBROWSER(WebDriver, funcparameters);
 //                break;
             case LAUNCHBROWSER:
-                blnResult = LAUNCHBROWSER(WebDriver, funcparameters);
+                GlobalDriver = LAUNCHBROWSER(driver, funcparameters);
                 break;
             case LOGIN:
-                blnResult = LOGIN(WebDriver, funcparameters);
+                blnResult = LOGIN(driver, funcparameters);
                 break;
             case ENTERVALUE:
-                blnResult = ENTERVALUE(WebDriver, funcparameters);
+                blnResult = ENTERVALUE(funcparameters);
                 break;
             case SELECTVALUEDROPDOWN:
                 blnResult = SELECTVALUEDROPDOWN(driver, funcparameters);
                 break;
             case CLICK:
-                blnResult = CLICK(WebDriver, funcparameters);
+                blnResult = CLICK( funcparameters);
                 break;
             case JAVACLICK:
                 blnResult = JAVACLICK(driver, funcparameters);
                 break;
             case HIGHLIGHTER:
-                blnResult = Highlighter(WebDriver, funcparameters);
+                blnResult = Highlighter(driver, funcparameters);
                 break;
             case SWITCHTOWINDOW_VERIFY:
                 blnResult = SWITCHTOWINDOW_Verify(driver, funcparameters);
@@ -269,7 +273,7 @@ public class CommonFunctions {
                 blnResult = WAITTIME(funcparameters);
                 break;
             case WAITFORELEMENT:
-                blnResult = WAITFORELEMENT(WebDriver, funcparameters);
+                blnResult = WAITFORELEMENT(driver, funcparameters);
                 break;
             case VERIFYTABLEVALUE:
                 blnResult = VERIFYTABLEVALUE(driver, funcparameters);
@@ -442,22 +446,23 @@ public class CommonFunctions {
 	 * Author: Sahitya
 	 */
  // *************************************************************************************************************************
- public static WebDriver init_driver(String browserName) throws IOException {
+ public static WebDriver init_driver(String browserName) throws IOException
+ {
      String workingDirectory = new java.io.File(".").getCanonicalPath();
 
-  System.out.println( WebDriverManager.chromedriver().getDriverVersions());
+  System.out.println(WebDriverManager.chromedriver().getDriverVersions());
      Properties prop;
      System.out.println("Browser lanuch is : " + browserName);
      if (browserName.equalsIgnoreCase("chrome"))
      {
          WebDriverManager.chromedriver().setup();
        //  System.setProperty("webdriver.chrome.driver", workingDirectory + "/JavaJarfiles/chromedriver.exe");
-         WebDriver = new ChromeDriver();
+         DriverScript.WebDriver = new ChromeDriver();
      }
 
      else if (browserName.equalsIgnoreCase("firefox")) {
        WebDriverManager.firefoxdriver().setup();
-         WebDriver = new FirefoxDriver();
+         DriverScript.WebDriver = new FirefoxDriver();
      } else if (browserName.equalsIgnoreCase("ieexplorer")) {
         WebDriverManager.edgedriver().setup();
        //  driver = new EdgeDriver();
@@ -465,13 +470,14 @@ public class CommonFunctions {
          System.out.println("Browser is not supported " + browserName);
      }
 
-     WebDriver.manage().window().maximize();
-     WebDriver.manage().deleteAllCookies();
-     return WebDriver;
+     DriverScript.WebDriver.manage().window().maximize();
+     DriverScript.WebDriver.manage().deleteAllCookies();
+     return DriverScript.WebDriver;
  }
-    public static boolean LAUNCHBROWSER(WebDriver WebDriver, String parameters) throws IOException 
-    {
+    public static WebDriver LAUNCHBROWSER(WebDriver WebDriver, String parameters) throws IOException, InterruptedException {
 
+
+      //  Thread.sleep(3000);
 
         String workingDirectory = new java.io.File(".").getCanonicalPath();
         String actualurl = null;
@@ -538,11 +544,7 @@ public class CommonFunctions {
                 WebDriver.get(url);
                 WebDriver.manage().window().maximize();
                 actualurl = WebDriver.getCurrentUrl();
-                WebElement sign = WebDriver.findElement(By.cssSelector("a#nav-link-accountList"));
 
-
-                Actions ac = new Actions(WebDriver);
-                ac.moveToElement(sign).build().perform();
                 if (!(WebDriver instanceof WebStorage))
 				{
 					throw new IllegalArgumentException("This test expects the driver to implement WebStorage");
@@ -581,14 +583,14 @@ public class CommonFunctions {
 
         if (url.equals(url)) {
             ReportFunctions.LogRepoter("pass", "Entered URL to Launch Applicatioin", "Application launched succesfully");
-            return true;
+            return WebDriver;
 
         } else {
             //System.out.println(driver.getCurrentUrl());
             ReportFunctions.LogRepoter("Fail", "Entered URL to Launch Applicatioin", "Failed to launch application");
             WAITTIME("waittime->2");
             CLOSEALLBROWSERS(driver);
-            return false;
+            return WebDriver;
         }
 
     }
@@ -814,6 +816,10 @@ public static void startDockerGrid() throws IOException, InterruptedException
                     break;
                 case "xpath":
                     locpath = WebDriver.findElement(By.xpath(locator));
+                   WebDriverWait wait = new WebDriverWait(WebDriver,20);
+                   wait.until(ExpectedConditions.elementToBeClickable(locpath));
+
+
                     break;
                 case "cssSelector":
                     locpath = WebDriver.findElement(By.cssSelector(locator));
@@ -855,14 +861,14 @@ public static void startDockerGrid() throws IOException, InterruptedException
             arguments = splitfunction(parameters, "\\->");
             WebElement locator = null;
             if (arguments[1].matches(".*:.*")) {
-                locator = Getlocator(WebDriver, arguments[1]);
+                locator = Getlocator(GlobalDriver, arguments[1]);
             }
 
             else
             {
 
 
-                locator = getlocatorKeyValue(WebDriver, arguments[1]);
+                locator = getlocatorKeyValue(GlobalDriver, arguments[1]);
 
 
             }
@@ -959,7 +965,8 @@ public static void startDockerGrid() throws IOException, InterruptedException
 	 * Author: Sahitya
 	 */
 // ************************************************************************************************************************     
-    public static boolean ENTERVALUE(WebDriver WebDriver, String parameters) throws Exception {
+    public static boolean ENTERVALUE( String parameters) throws Exception
+    {
         String[] arguments = null;
         Boolean Status = true;
         arguments = splitfunction(parameters, "\\->");
@@ -1008,19 +1015,32 @@ public static void startDockerGrid() throws IOException, InterruptedException
                     }
                 }
             }
+            Thread.sleep(4000);
 
-            //WebElement locator = Getlocator(driver, arguments[1]);
             WebElement locator = null;
-          //  if (arguments[1].matches(".*:.*"))
-            //{
-                locator = Getlocator(WebDriver, arguments[1]);
+            if (arguments[1].matches(".*:.*"))
+            {
 
-            //}
-          //  else {
+                  try {
+                      locator = Getlocator(GlobalDriver, arguments[1]);
+                  }
+                  catch (StaleElementReferenceException e){
+                      locator = Getlocator(GlobalDriver, arguments[1]);
+                  }
+                  finally {
+                      locator = Getlocator(GlobalDriver, arguments[1]);
+                  }
 
-               // locator = getlocatorKeyValue(WebDriver, arguments[1]);
-            //}
-            if (locator.isEnabled()) {
+
+
+
+            }
+            else {
+
+                locator = getlocatorKeyValue(GlobalDriver, arguments[1]);
+
+            }
+            if (true) {
                 if (arguments[3].toUpperCase().contains("SYSDATE"))
                 {
 //                    String sysdat = Sysdate(arguments[3]);
@@ -1030,14 +1050,27 @@ public static void startDockerGrid() throws IOException, InterruptedException
 //                            "Succesfully entered the Date" + sysdat);
 //                    return true;
                 } else if (hmap.containsKey(arguments[3])) {
+
                     String value = hmap.get(arguments[3]);
-                    locator.sendKeys(value);
+                    try {
+                        locator.sendKeys(value);
+                    }
+                    catch (NoSuchElementException e)
+                    {
+                        locator.sendKeys(value);
+                    }
                     System.out.println("Succesfully entered the value" + " " + value);
                     ReportFunctions.LogRepoter("pass", "Entere the value in the feild",
                             "Succesfully entered the value" + arguments[2] + " " + value);
                     return true;
                 } else {
-                    locator.sendKeys(arguments[3]);
+                    try {
+                        locator.sendKeys(arguments[3]);
+                    }
+                    catch (NoSuchElementException e)
+                    {
+                        locator.sendKeys(arguments[3]);
+                    }
                     System.out.println("Succesfully entered the value" + " " + arguments[3]);
                     ReportFunctions.LogRepoter("pass", "Entere the value in the feild",
                             "Succesfully entered the value" + arguments[2] + " " + " " + arguments[3]);
@@ -1130,7 +1163,7 @@ public static void startDockerGrid() throws IOException, InterruptedException
 	 */
 // ************************************************************************************************************************    
 
-    public static boolean CLICK(WebDriver WebDriver, String parameters) throws Exception {
+    public static boolean CLICK( String parameters) throws Exception,StaleElementReferenceException {
         Thread.sleep(1000);
         Boolean Status = true;
         String[] arguments = null;
@@ -1173,18 +1206,29 @@ public static void startDockerGrid() throws IOException, InterruptedException
 //            }
             //WebElement locator = Getlocator(driver, arguments[1]);
             WebElement locator = null;
-           if (arguments[1].matches(".*:.*")) {
-                locator = Getlocator(WebDriver, arguments[1]);// old method calling
-            } else {
+           if (arguments[1].matches(".*:.*"))
+           {
 
-                locator = getlocatorKeyValue(WebDriver, arguments[1]); // object repository method calling
+
+
+              locator = Getlocator(GlobalDriver, arguments[1]);// old method calling
+               //ENTERVALUE(WebDriver,parameters);
+
+
+
             }
-           if (locator.isEnabled()) {
+           else {
+
+                locator = getlocatorKeyValue(GlobalDriver, arguments[1]); // object repository method calling
+            }
+           if (true)
+           {
                 Thread.sleep(3000);
                 locator.click();
                 System.out.println("Succesfully clicked on" + " " + arguments[2]);
                 ReportFunctions.LogRepoter("pass", "click on the object", "Succesfully clicked on" + " " + arguments[2]);
-            } else {
+            } else
+            {
                 System.out.println("unable to find" + " " + arguments[2]);
                 ReportFunctions.LogRepoter("Fail", "click on the object", "unable to find" + " " + arguments[2]);
                 //CLOSEALLBROWSERS(driver);
@@ -1194,8 +1238,11 @@ public static void startDockerGrid() throws IOException, InterruptedException
         } catch (Exception e) {
 
             System.out.println("unable to find the locator" + " " + e.getMessage());
+            Thread.sleep(2000);
+
             ReportFunctions.LogRepoter("Fail", "click on the object",
                     "unable to find the locator" + " ");
+            System.out.println("hello");
                 //CLOSEALLBROWSERS(driver);
                Status = false;
               // WebDriver.close();
@@ -2403,7 +2450,7 @@ public static void startDockerGrid() throws IOException, InterruptedException
 
     }
 
-    public static void Readtestsuitefile(String path) throws IOException, Exception {
+    public static void Readtestsuitefile(String path) throws Throwable {
         try {
             String Filepath = path;
             Sheet suiteheet;
@@ -7142,7 +7189,8 @@ public static void startDockerGrid() throws IOException, InterruptedException
     public static WebElement getlocatorKeyValue(WebDriver WebDriver, String parameters) throws IOException {
         parameters = getLocatorKey(WebDriver, parameters);
 
-        if (parameters.isEmpty()) {
+        if (parameters.isEmpty())
+        {
             System.out.println("unable to find the locator::" + " " + locator);
             ReportFunctions.LogRepoter("Fail", "locator not identified", " unable to find the locator::" + "  " + locator);
             return null;

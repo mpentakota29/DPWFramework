@@ -1,22 +1,29 @@
 package SeleniumAutomation;
 
+import lombok.SneakyThrows;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
-import java.awt.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.sql.SQLException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Properties;
 
 import static SeleniumAutomation.ReportFunctions.iteratorCnt;
-public class DriverScript extends CommonFunctions implements BusinessFunctions,Runnable
+public class DriverScript extends CommonFunctions implements Runnable
 {
-
+    public static org.openqa.selenium.WebDriver WebDriver;
+    public static boolean dockerlaunch;
+    public static boolean LocalLaunch = false;
+    public static boolean dockerChromeFirefoxedgelaunch = false;
+    public static boolean dockerChromeFirefoxlaunch = false;
+    public static boolean dockerChromelaunch = false;
     public static int finval;
     public static int rowcount;
     public static int rowcount1;
@@ -41,10 +48,11 @@ public class DriverScript extends CommonFunctions implements BusinessFunctions,R
 
     public DriverScript(org.openqa.selenium.WebDriver WebDriver, String Path)
     {
+
        // super(WebDriver, Path,Browser);
         // TODO Auto-generated constructor stub
         this.Path = Path;
-        CommonFunctions.WebDriver = WebDriver;
+        this.WebDriver = WebDriver;
 
 
     }
@@ -62,17 +70,34 @@ public class DriverScript extends CommonFunctions implements BusinessFunctions,R
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
 
     }
-    String Path;
- 
 
-    
+    String Path;
+    public static org.openqa.selenium.WebDriver DockerChromeDriver(String Browser) throws MalformedURLException, InterruptedException
+    {
+
+        DesiredCapabilities dc = new DesiredCapabilities();
+        dc.setBrowserName(Browser);
+
+        URL url = new URL("http://localhost:4444/wd/hub");
+
+        WebDriver = new RemoteWebDriver(url,dc);
+
+
+
+        return WebDriver;
+
+
+    }
+
+
+
   // ************************************************************************************************************************
 	/*
 	 * Function Name:CHECKING WHETHER SUITE EXECUTION STATUS IS YES/NO
@@ -81,25 +106,29 @@ public class DriverScript extends CommonFunctions implements BusinessFunctions,R
 	 */
     // *************************************************************************************************************************
 
-    public static void main(String[] args) throws FileNotFoundException, IOException, Exception
-  {
+    @SneakyThrows
+    public static void main(String[] args) throws InterruptedException
+    {
 
 
       //startDockerGrid();
-      DriverScript ds = new DriverScript(driver,"SuiteFile");
-      DriverScript ds2 = new DriverScript(driver2,"SuiteFile22");
+      DriverScript ds = new DriverScript(driver,"AmazonSuite");
+    //Thread.sleep(12000);
+      DriverScript ds2 = new DriverScript(driver2,"FlipkartSuite");
       Thread th  = new Thread(ds);
       Thread th2  = new Thread(ds2);
       th.start();
-      Thread.sleep(8000);
+      Thread.sleep(12000);
       th2.start();
+       // ReadSuite("FlipkartSuite");
 
-      //readSuitePath("AmazonSuite");
 
-  }
-    public  static void ReadSuite(String Suitepath) throws IOException, Exception 
-    {         
-        
+    }
+
+
+    public  static void ReadSuite(String Suitepath) throws Throwable
+    {
+
         final long MSEC_SINCE_EPOCH = System.currentTimeMillis();
 	       String workingDirectory = new File(".").getCanonicalPath();
 	        String dir = workingDirectory;
@@ -111,6 +140,67 @@ public class DriverScript extends CommonFunctions implements BusinessFunctions,R
 	        Sheet ssheet = wbs.getSheetAt(0);
 	        int rc = ssheet.getLastRowNum();
 	        int valr;
+        Cell cell1 = ssheet.getRow(1).getCell(3);
+        Cell cell2 = ssheet.getRow(1).getCell(4);
+
+
+        Cell cell3 = ssheet.getRow(1).getCell(5);
+        Cell cell4 = ssheet.getRow(1).getCell(6);
+
+        String Estatus1 = cell1.getStringCellValue();
+        String Estatus2 = cell2.getStringCellValue();
+        String Estatus3 = cell3.getStringCellValue();
+        String Estatus4 = cell4.getStringCellValue();
+
+
+        if(Estatus1.trim().equalsIgnoreCase("Docker"))
+        {
+
+            dockerlaunch = true;
+            if(Estatus2.trim().equalsIgnoreCase("YES")&&Estatus3.trim().equalsIgnoreCase("YES")&&Estatus4.trim().equalsIgnoreCase("YES"))
+            {
+
+                dockerChromeFirefoxedgelaunch = true;
+
+
+            }
+
+            else if(Estatus2.trim().equalsIgnoreCase("YES")&&Estatus4.trim().equalsIgnoreCase("YES"))
+
+            {
+
+                dockerChromeFirefoxlaunch = true;
+
+
+            }
+
+            else if(Estatus2.trim().equalsIgnoreCase("YES"))
+            {
+
+                dockerChromelaunch = true;
+
+            }
+
+
+
+        }
+        else if(Estatus1.trim().equalsIgnoreCase("Local")) {
+
+            LocalLaunch = true;
+            if (Estatus2.trim().equalsIgnoreCase("YES") && Estatus3.trim().equalsIgnoreCase("YES") && Estatus4.trim().equalsIgnoreCase("YES")) {
+                dockerChromeFirefoxedgelaunch = true;
+
+
+            } else if (Estatus2.trim().equalsIgnoreCase("YES") && Estatus4.trim().equalsIgnoreCase("YES")) {
+                dockerChromeFirefoxlaunch = true;
+
+
+            } else if (Estatus2.trim().equalsIgnoreCase("YES")) {
+                dockerChromelaunch = true;
+
+
+            }
+        }
 
 	        for (valr = 1; valr <= rc; valr++)
             {
@@ -137,7 +227,8 @@ public class DriverScript extends CommonFunctions implements BusinessFunctions,R
 
 	        wbs.close();
     }
-    
+
+
     // ************************************************************************************************************************
 	/*
 	 * Function Name:getEnvironmentDetails
@@ -145,8 +236,8 @@ public class DriverScript extends CommonFunctions implements BusinessFunctions,R
 	 * Author: Sahitya
 	 */
     // *************************************************************************************************************************
-    
-      public static void getEnvironmentDetails(String runsuitename, String dir) throws Exception
+
+      public static void getEnvironmentDetails(String runsuitename, String dir) throws Throwable
       {
 	        Tsuitename = runsuitename;
 	        String suitepath = dir + "\\TestSuites\\" + runsuitename + ".xlsx";
@@ -159,18 +250,18 @@ public class DriverScript extends CommonFunctions implements BusinessFunctions,R
 	        Readtestsuitefile(suitepath);
 
 	    }
-      
+
     // ************************************************************************************************************************
 	/*
 	 * Function Name:Initializationscript
-	 * It will read the testcase and it will check whether the cell contains keyword or not,after keyword cell it will 
-           moves to next row and it will read each row one by one,and each keyword is saved in hashmap,if the cell contains empty 
+	 * It will read the testcase and it will check whether the cell contains keyword or not,after keyword cell it will
+           moves to next row and it will read each row one by one,and each keyword is saved in hashmap,if the cell contains empty
            data then it will not read.It will check whether multiple data set is YES/NO.
 	 * Author: Sahitya
 	 */
     // *************************************************************************************************************************
 
-    public static void Initializationscript(String testcasepath) throws IOException, InterruptedException, AWTException, ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException, Exception {
+    public static void Initializationscript(String testcasepath) throws Throwable {
         try {
             Strparameters = "";
             count = 1;
@@ -283,9 +374,10 @@ public class DriverScript extends CommonFunctions implements BusinessFunctions,R
                     count = 1;
                     currentrow = currentrow + 1;
                 } else {
-                    blnResult = Invokekeyword(parameters[0], Strparameters);
+                    blnResult = Invokekeyword(WebDriver,parameters[0], Strparameters);
                     if (blnResult == false) {
-                       if (Tsuitename.toUpperCase().contains("SANITY")) {
+                       if (Tsuitename.toUpperCase().contains("SANITY"))
+                       {
                        } else {
                            break;
                       }
@@ -332,7 +424,7 @@ public class DriverScript extends CommonFunctions implements BusinessFunctions,R
 	 * Author: Sahitya
 	 */
     // *************************************************************************************************************************
-    
+
 
     // *************************************************************************************************************************
 	/*
@@ -341,8 +433,8 @@ public class DriverScript extends CommonFunctions implements BusinessFunctions,R
 	 * Author: Sahitya
 	 */
     // *************************************************************************************************************************
-    
-    public static void MulInitializationscript(String testcasepath) throws IOException, InterruptedException, AWTException, ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException, Exception, StaleElementReferenceException {
+
+    public static void MulInitializationscript(String testcasepath) throws Throwable {
 
         Strparameters = "";
         count = 1;
@@ -473,7 +565,7 @@ public class DriverScript extends CommonFunctions implements BusinessFunctions,R
                         skipflag = false;
                         currentrow = currentrow + 1;
                     } else {
-                        blnResult = Invokekeyword(parameters[0], Strparameters);
+                        blnResult = Invokekeyword(WebDriver,parameters[0], Strparameters);
                         if (blnResult == false) {
 //                            if (Tsuitename.toUpperCase().contains("SANITY")) {
 //                            } else {
@@ -496,4 +588,3 @@ public class DriverScript extends CommonFunctions implements BusinessFunctions,R
         }
     }
 }
-   
